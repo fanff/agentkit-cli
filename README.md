@@ -1,15 +1,13 @@
-# Akit-Bootstrap
+# AgentKit Cli
 
-Akit-Bootstrap is a tool to help you get started with the AgentKit platform. It will create a new project for you and set up the necessary files and directories to get you started.
+AgentKit Cli is a tool to help you get started with the AgentKit platform. It will create a new project for you and set up the necessary files and directories to get you started.
 
 ## Installation
 
 To install the akit-bootstrap tool, you can use pip:
 
 ```bash
-
-pip install akit-bootstrap
-
+pip install agentkit-cli
 ```
 
 ## Usage
