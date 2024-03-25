@@ -4,11 +4,14 @@ AgentKit Cli is a tool to help you get started with the AgentKit platform. It wi
 
 ## Installation
 
-To install the akit-bootstrap tool, you can use pip:
+To install the akit-bootstrap tool, you can use pip and install globally in your system:
 
 ```bash
-pip install agentkit-cli
+pip install -U git+https://github.com/fanff/agentkit-cli
+# akit is installed
+akit --help 
 ```
+
 
 ## Usage
 
