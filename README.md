@@ -74,7 +74,3 @@ akit ingest
 * `akit help` : Get information about your project
 
 
-# add the indexing of the files command 
-
-
-
