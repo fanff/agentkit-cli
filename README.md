@@ -42,6 +42,17 @@ You will have access to the following tools with local urls in your browser:
 - Jaeger: http://localhost:16686: For tracing your agent
 - Dozzle: http://localhost:9999: For monitoring your agent logs
 
+A default agent configuration structure is ready for you to edit.
+
+```
+<project_name>_agentconfig/
+│   agent.yml
+│   tools.yml
+│   extraction.yml
+compose.yml
+```
+
+
 
 
 

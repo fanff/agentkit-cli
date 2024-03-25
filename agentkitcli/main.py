@@ -77,6 +77,8 @@ def init(path,project_name,openai_key,openai_org):
 
     os.makedirs(dest_path, exist_ok=True)
 
+    
+
     # Access a YAML file
     yaml_path = files('agentkitcli.tools_bootstrap') # name of a module here
 
