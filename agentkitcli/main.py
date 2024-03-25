@@ -7,24 +7,33 @@ import shutil
 import click
 from importlib.resources import files
 
-CONNEXION_LINES ="""
-* AgentKit: http://localhost:9090/api/v1/docs : For testing your argent live
-* Jaeger: http://localhost:16686: For tracing your agent
-* Dozzle: http://localhost:9999: For monitoring your agent logs
-"""
+CONNEXION_LINES =[
+("AgentKit","http://localhost:3000","For testing your argent live"),
+("API","http://localhost:9090/api/v1/docs","For testing with the API directly"),
+("Jaeger","http://localhost:16686","For tracing execution of your agent"),
+("Dozzle","http://localhost:9999","For monitoring your agent logs"),
+]
 
 GREEN = '\033[92m'  # Green text
 RESET = '\033[0m'   # Reset attributes
 BOLD = '\033[1m'    # Bold text
 
+
+def echo_links():
+    click.echo(f"{BOLD}Common connexion lines to use : {RESET}\n")
+    for name,link,desc in CONNEXION_LINES:
+        click.echo(f"{GREEN}{name}{RESET} : {link} {desc}")
+    click.echo("")
+
 def echo_suggested_commands():
     click.echo(f"{BOLD}Suggested commands : {RESET}\n")
     all_commands = {
         "akit init":"Initialize your project",
-        "akit up":"Start your project",
+        "akit up":"Start your project containers",
         "akit down":"Stop your project",
         "akit build":"Build your project",
-        "akit info":"Get information about your project",
+        "akit ps":"Get current running containers",
+        "akit help":"Get information about your project",
     }
     
     for cmd,desc in all_commands.items():
@@ -72,12 +81,18 @@ def init(path,project_name,openai_key,openai_org):
     shutil.copyfile(f"{path}/agentkit/frontend/.env.example", f"{path}/.envfrontend")
 
     # Copy the sample agent configuration in a fresh directory
-    
     dest_path = f"{path}/{project_name}_agentconfig"
+    mounted_dest_path = f"/{project_name}_agentconfig" # docker volume path , as seen from inside the container
 
     os.makedirs(dest_path, exist_ok=True)
 
+    # manage the text documents directory
+    docs_path = f"{path}/{project_name}_textdocuments"
+    mounted_docs_path = f"/{project_name}_textdocuments" # docker volume path , as seen from inside the container
+    os.makedirs(docs_path, exist_ok=True)
 
+    replace_line(".envbackend", "PDF_TOOL_DATA_PATH", f"PDF_TOOL_DATA_PATH=/{mounted_docs_path}/")
+    replace_line(".envbackend", "EXTRACTION_CONFIG_PATH", f"EXTRACTION_CONFIG_PATH=/{mounted_dest_path}/extraction.yml")
 
     # Access a YAML file
     yaml_path = files('agentkitcli.tools_bootstrap') # name of a module here
@@ -95,7 +110,6 @@ def init(path,project_name,openai_key,openai_org):
     replace_line(".envbackend", "OPENAI_ORGANIZATION", f"OPENAI_ORGANIZATION={openai_org}")
     replace_line(".envbackend", "NEXTAUTH_SECRET", f"NEXTAUTH_SECRET={nextauth_secret}")
     replace_line(".envbackend", "AGENT_CONFIG_PATH", f"AGENT_CONFIG_PATH=/{dest_path}/agent.yml")
-    replace_line(".envbackend", "EXTRACTION_CONFIG_PATH", f"EXTRACTION_CONFIG_PATH=/{dest_path}/extraction.yml")
     replace_line(".envbackend", "PROJECT_NAME", f"PROJECT_NAME={project_name}")
 
     replace_line(".envfrontend", "NEXTAUTH_SECRET", f"NEXTAUTH_SECRET={nextauth_secret}")
@@ -103,7 +117,7 @@ def init(path,project_name,openai_key,openai_org):
 
     # copy the .envfrontend to the frontend directory 
     shutil.copyfile(".envfrontend", f"{path}/agentkit/frontend/.env")
-    
+
     # copy the compose.yml.tmpl to compose.yml
     compose_file = yaml_path.joinpath('compose.yml.tmpl')
     compose_content = compose_file.read_text()
@@ -141,13 +155,18 @@ def down(envfile):
 @cli.command()
 @click.option('--envfile', default='.envbackend', help='The env file to use')
 def up(envfile):
+    # copy the .envfrontend to the frontend directory (necessary at build time)
+    shutil.copyfile(".envfrontend", "./agentkit/frontend/.env")
     os.system(f"docker-compose --env-file {envfile} up -d")
 
 @cli.command()
 @click.option('--envfile', default='.envbackend', help='The env file to use')
 def build(envfile):
-    os.system(f"docker-compose --env-file {envfile} build")
+    os.system("docker-compose --env-file .envbackend build fastapi_server")
 
+    # copy the .envfrontend to the frontend directory (necessary at build time )
+    shutil.copyfile(".envfrontend", "./agentkit/frontend/.env")
+    os.system("docker-compose --env-file .envfrontend build nextjs_server")
 
 
 @cli.command()
@@ -155,14 +174,16 @@ def build(envfile):
 def ps(envfile):
     os.system(f"docker-compose --env-file {envfile} ps")
 
+@cli.command()
+@click.option('--envfile', default='.envbackend', help='The env file to use')
+def ingest(envfile):
+    # run a command in the fastapi container
+    os.system(f"docker-compose --env-file {envfile} exec fastapi_server python app/document_ingestion.py")
 
 @cli.command()
 @click.option('--envfile', default='.envbackend', help='The env file to use')
 def help(envfile):
-
-    click.echo(f"{BOLD}Common connexion lines to use : {RESET}\n")
-
-    click.echo(CONNEXION_LINES)
+    echo_links()
     echo_suggested_commands()
 def main():
     cli()

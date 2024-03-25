@@ -27,6 +27,7 @@ services:
     volumes:
       - ./agentkit/backend/app:/code
       - ./PROJECT_NAME_agentconfig/:/PROJECT_NAME_agentconfig/
+      - ./PROJECT_NAME_textdocuments/:/PROJECT_NAME_textdocuments/
     ports:
       - 9090:9090
     expose:
