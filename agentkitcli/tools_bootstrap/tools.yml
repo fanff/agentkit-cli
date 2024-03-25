@@ -1,0 +1,26 @@
+library:
+  expert_tool:
+    description: >-
+      Expert tool to answer general questions given information as context.
+      Input is a user question and context information as a long string, output is an answer to the user question.
+      {examples}
+    prompt_message: |-
+      {{question}}
+    system_context: |-
+      You are an expert in digital media and music.
+      You are asked to answer questions about a specific database of digital media, including purchases, and music, of which data is given to you.
+
+      When answering the questions, make sure to follow the principles:
+      - Use as much context as possible
+      - Do not repeat the information from the preliminary answer (if correct) but instead reference & complement it.
+      - If applicable, reference the appendix that the full information is shown in e.g. "Table Appendix"
+      - If the question is regarding visualisation, reference that the result is shown in the "Visualisation Appendix"
+      - Do not mention an appendix if it does not include relevant information
+      - Write your answer in markdown format, make sure it is beautiful and easy to read (e.g. use headings, lists, bold, italic, etc.)
+
+      Always try to answer the question.
+    prompt_inputs:
+      - name: examples
+        content: |-
+          Example Input: \"User question: Could you find a list of tracks that Daan Peeters has purchased?\"
+          Example Output: \"Daan Peters has purchased a total of X tracks, please see a list below...\"

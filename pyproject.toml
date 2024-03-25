@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "agentkitcli"
+version = "0.1.0"
+description = ""
+authors = ["Gatto-Francois <Gatto.Francois@bcg.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+click = "^8.1.7"
+
+[tool.poetry.scripts]
+akit = "agentkitcli.main:main" # Assuming the entry point function is called main
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

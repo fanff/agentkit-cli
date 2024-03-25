@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  
+  fastapi_server:
+    container_name: fastapi_server
+    build: ./agentkit/backend
+    restart: always
+    # Enable debug mode run .vscode/launch.json -> "Debug: Attach to FastAPI Docker"
+    # command: "sh -c 'pip install debugpy -t /tmp && alembic upgrade head && python /tmp/debugpy --wait-for-client --listen 0.0.0.0:5678 -m uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 9090 --loop asyncio'"
+    # ports:
+    #   - 5678:5678
+    # Disable debug mode if only frontend development
+    #command: "sh -c 'alembic upgrade head && python app/document_ingestion.py && uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 9090'"
+    command: "sh -c 'alembic upgrade head && uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 9090 --log-level debug'"
+    volumes:
+      - ./agentkit/backend/app:/code
+      - ./PROJECT_NAME_agentconfig/:/PROJECT_NAME_agentconfig/
+    ports:
+      - 9090:9090
+    expose:
+      - 9090
+    env_file: ".envbackend"
+    depends_on:
+      - database
+    
+  database:
+    image: ankane/pgvector:v0.4.1
+    restart: always
+    container_name: database
+    env_file: ".envbackend"
+    user: root
+    volumes:
+      - ./db_docker:/var/lib/postgresql
+      - ./agentkit/backend/scripts/1-create-dbs.sql:/docker-entrypoint-initdb.d/1-create-dbs.sql
+    ports:
+      - 5432:5432
+    expose:
+      - 5432
+    environment:
+      - POSTGRES_USERNAME=${DATABASE_USER}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_DATABASE=${DATABASE_NAME}
+      - POSTGRES_HOST_AUTH_METHOD= "trust"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis_server:
+    image: redis:alpine
+    container_name: redis_server
+    restart: always
+    ports:
+      - 6379:6379 # Remove this on production
+    expose:
+      - 6379
+    env_file: .envbackend
+
+  jaeger:
+    # https://www.jaegertracing.io/docs/1.55/deployment/
+    container_name: jaeger
+    image: jaegertracing/all-in-one:1.55
+    environment:
+      - COLLECTOR_ZIPKIN_HTTP_PORT=9411
+      - COLLECTOR_OTLP_ENABLED=true 
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"
+      - "14268:14268"
+      - "9411:9411"
+      - "4317:4317" # oltp ports 
+      - "4318:4318" # oltp ports 
+
+  dozzle:
+    container_name: dozzle
+    image: amir20/dozzle:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 9999:8080
+volumes:
+  langchain-db-data:
+  langchain-redis-data:
