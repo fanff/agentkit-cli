@@ -53,9 +53,13 @@ compose.yml
 ```
 
 
-## Start the document ingestion
+## Document ingestion
 
-[in construction] To start the document ingestion, you can use the following command:
+[in construction] To start the document ingestion, you can use the following process:
+
+1. Put your documents inside the `<project_name>_textdocuments` folder. 
+2. Edit the `extraction.yml` file to define the extraction process.
+3. Start the ingestion process with the `akit ingest` command.
 
 ```bash
 akit ingest 
