@@ -1,7 +1,18 @@
 version: '3.8'
 
 services:
-  
+  nextjs_server:
+    container_name: nextjs_server
+    build: ./agentkit/frontend
+    command: "sh -c 'node server.js'"
+    volumes:
+      - ./agentkit/frontend:/code
+    ports:
+      - 3000:3000
+    expose:
+      - 3000
+    env_file: ".envfrontend"
+    
   fastapi_server:
     container_name: fastapi_server
     build: ./agentkit/backend

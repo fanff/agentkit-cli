@@ -77,7 +77,7 @@ def init(path,project_name,openai_key,openai_org):
 
     os.makedirs(dest_path, exist_ok=True)
 
-    
+
 
     # Access a YAML file
     yaml_path = files('agentkitcli.tools_bootstrap') # name of a module here
@@ -98,6 +98,12 @@ def init(path,project_name,openai_key,openai_org):
     replace_line(".envbackend", "EXTRACTION_CONFIG_PATH", f"EXTRACTION_CONFIG_PATH=/{dest_path}/extraction.yml")
     replace_line(".envbackend", "PROJECT_NAME", f"PROJECT_NAME={project_name}")
 
+    replace_line(".envfrontend", "NEXTAUTH_SECRET", f"NEXTAUTH_SECRET={nextauth_secret}")
+    replace_line(".envfrontend", "NEXT_PUBLIC_API_URL", "NEXT_PUBLIC_API_URL=http://localhost:9090/api/v1")
+
+    # copy the .envfrontend to the frontend directory 
+    shutil.copyfile(".envfrontend", f"{path}/agentkit/frontend/.env")
+    
     # copy the compose.yml.tmpl to compose.yml
     compose_file = yaml_path.joinpath('compose.yml.tmpl')
     compose_content = compose_file.read_text()
@@ -109,7 +115,8 @@ def init(path,project_name,openai_key,openai_org):
     ans = click.prompt("Do you want to build docker images now ? [Y/n]",default="Y")
     if ans.lower() == "y":
         # run dockbuild 
-        os.system("docker-compose --env-file .envbackend build")
+        os.system("docker-compose --env-file .envbackend build fastapi_server")
+        os.system("docker-compose --env-file .envfrontend build nextjs_server")
         # run docker-compose up
         os.system("docker-compose --env-file .envbackend up -d")
 
