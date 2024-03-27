@@ -2,6 +2,7 @@
 
 import fileinput
 import glob
+import io
 import os
 import shutil
 import click
@@ -38,6 +39,7 @@ def echo_suggested_commands():
     
     for cmd,desc in all_commands.items():
         click.echo(f"{GREEN}{cmd}{RESET} : {desc}")
+    click.echo("")
 
 def replace_line(file_name, prefix, new_line):
     # Placeholder to track if replacement has occurred
@@ -51,6 +53,15 @@ def replace_line(file_name, prefix, new_line):
                 replaced = True
             else:
                 print(line, end='')
+
+def run_command(command):
+    import subprocess
+    # run process 
+    run_completed = subprocess.run(command, shell=True, capture_output=True)
+    if run_completed.returncode == 0:    
+        return run_completed.stdout.decode('utf-8')
+    else:
+        return f"Error running: {command} \n{run_completed.stdout.decode('utf-8')} \n{run_completed.stderr.decode('utf-8')}"
 
 @click.group()
 def cli():
@@ -67,7 +78,7 @@ def init(path,project_name,openai_key,openai_org):
     click.echo(f'Project initialized in {path}, with the name {project_name}')
 
     # Grab a particular git remote, head only, checkout only
-    branch_name="feature/bettermonitoring"
+    branch_name="int"
     repo_url="https://github.com/fanff/agentkit.git"
     # if the directory exists, remove it
     if os.path.exists(f"{path}/agentkit"):
@@ -129,19 +140,19 @@ def init(path,project_name,openai_key,openai_org):
     ans = click.prompt("Do you want to build docker images now ? [Y/n]",default="Y")
     if ans.lower() == "y":
         # run dockbuild 
-        os.system("docker-compose --env-file .envbackend build fastapi_server")
-        os.system("docker-compose --env-file .envfrontend build nextjs_server")
+        run_command("docker-compose --env-file .envbackend build fastapi_server")
+        run_command("docker-compose --env-file .envfrontend build nextjs_server")
         # run docker-compose up
-        os.system("docker-compose --env-file .envbackend up -d")
+        run_command("docker-compose --env-file .envbackend up -d")
 
 
     click.echo(f"{BOLD}You can now access your agent : {RESET}\n")
-    click.echo(CONNEXION_LINES)
+    echo_links()
     
     echo_suggested_commands()
 
     click.echo("Your agent configuration is located in : ")
-    click.echo(f"{BOLD}{GREEN}{dest_path}{RESET}")
+    click.echo(f"{BOLD}{GREEN}{dest_path}/{RESET}")
 
 
     
@@ -149,42 +160,63 @@ def init(path,project_name,openai_key,openai_org):
 
 @cli.command()
 @click.option('--envfile', default='.envbackend',  help='The env file to use')
-def down(envfile):
-    os.system(f"docker-compose --env-file {envfile} down")
+@click.argument('extra_docker_args', nargs=-1)
+def down(envfile,extra_docker_args):
+    """Stop and clean up."""
+    extra = " ".join(extra_docker_args)
+    run_command(f"docker-compose --env-file {envfile} down {extra}")
 
 @cli.command()
 @click.option('--envfile', default='.envbackend', help='The env file to use')
-def up(envfile):
+@click.argument('extra_docker_args', nargs=-1)
+def up(envfile,extra_docker_args):
+    """Start the environment."""
     # copy the .envfrontend to the frontend directory (necessary at build time)
-    shutil.copyfile(".envfrontend", "./agentkit/frontend/.env")
-    os.system(f"docker-compose --env-file {envfile} up -d")
+    shutil.copyfile(f"{envfile}", "./agentkit/frontend/.env")
+    extra = " ".join(extra_docker_args)
+    run_command(f"docker-compose --env-file {envfile} up -d {extra}")
 
 @cli.command()
 @click.option('--envfile', default='.envbackend', help='The env file to use')
 def build(envfile):
-    os.system("docker-compose --env-file .envbackend build fastapi_server")
+    """Build all the docker images."""
+    run_command(f"docker-compose --env-file {envfile} build fastapi_server")
 
     # copy the .envfrontend to the frontend directory (necessary at build time )
-    shutil.copyfile(".envfrontend", "./agentkit/frontend/.env")
-    os.system("docker-compose --env-file .envfrontend build nextjs_server")
+    shutil.copyfile(f"{envfile}", "./agentkit/frontend/.env")
+    run_command(f"docker-compose --env-file {envfile} build nextjs_server")
 
 
 @cli.command()
 @click.option('--envfile', default='.envbackend', help='The env file to use')
-def ps(envfile):
-    os.system(f"docker-compose --env-file {envfile} ps")
+@click.argument('extra_docker_args', nargs=-1)
+def ps(envfile, extra_docker_args):
+    """Show the running containers."""
+    extra = " ".join(extra_docker_args)
+    r = run_command(f"docker-compose --env-file {envfile} ps {extra}")
+    click.echo(r)
+
+
+@cli.command()
+@click.option('--envfile', default='.envbackend', help='The env file to use')
+@click.argument('container', nargs=1)
+def restart(envfile, container):
+    """Show the running containers."""
+    r = run_command(f"docker-compose --env-file {envfile} restart {container}")
+    click.echo(r)
 
 @cli.command()
 @click.option('--envfile', default='.envbackend', help='The env file to use')
 def ingest(envfile):
+    """Ingest the documents."""
     # run a command in the fastapi container
-    os.system(f"docker-compose --env-file {envfile} exec fastapi_server python app/document_ingestion.py")
+    run_command(f"docker-compose --env-file {envfile} exec fastapi_server python app/document_ingestion.py")
 
 @cli.command()
-@click.option('--envfile', default='.envbackend', help='The env file to use')
 def help(envfile):
     echo_links()
     echo_suggested_commands()
+
 def main():
     cli()
     

@@ -16,7 +16,6 @@ services:
   fastapi_server:
     container_name: fastapi_server
     build: ./agentkit/backend
-    restart: always
     # Enable debug mode run .vscode/launch.json -> "Debug: Attach to FastAPI Docker"
     # command: "sh -c 'pip install debugpy -t /tmp && alembic upgrade head && python /tmp/debugpy --wait-for-client --listen 0.0.0.0:5678 -m uvicorn app.main:app --reload --workers 1 --host 0.0.0.0 --port 9090 --loop asyncio'"
     # ports:
@@ -38,7 +37,6 @@ services:
     
   database:
     image: ankane/pgvector:v0.4.1
-    restart: always
     container_name: database
     env_file: ".envbackend"
     user: root
@@ -63,7 +61,6 @@ services:
   redis_server:
     image: redis:alpine
     container_name: redis_server
-    restart: always
     ports:
       - 6379:6379 # Remove this on production
     expose:
