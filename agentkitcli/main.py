@@ -172,7 +172,7 @@ def down(envfile,extra_docker_args):
 def up(envfile,extra_docker_args):
     """Start the environment."""
     # copy the .envfrontend to the frontend directory (necessary at build time)
-    shutil.copyfile(f"{envfile}", "./agentkit/frontend/.env")
+    shutil.copyfile(f".envfrontend", "./agentkit/frontend/.env")
     extra = " ".join(extra_docker_args)
     run_command(f"docker-compose --env-file {envfile} up -d {extra}")
 
@@ -183,7 +183,7 @@ def build(envfile):
     run_command(f"docker-compose --env-file {envfile} build fastapi_server")
 
     # copy the .envfrontend to the frontend directory (necessary at build time )
-    shutil.copyfile(f"{envfile}", "./agentkit/frontend/.env")
+    shutil.copyfile(f".envfrontend", "./agentkit/frontend/.env")
     run_command(f"docker-compose --env-file {envfile} build nextjs_server")
 
 
