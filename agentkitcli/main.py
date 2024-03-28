@@ -57,13 +57,13 @@ def replace_line(file_name, prefix, new_line):
 def run_command(command):
     import subprocess
     # run process 
-    run_completed = subprocess.run(command, shell=True, capture_output=True)
+    run_completed = subprocess.run(command, shell=True)
     if run_completed.returncode == 0:    
-        txt= run_completed.stdout.decode('utf-8')
+        return ""
     else:
-        txt= f"Error running: {command} \n{run_completed.stdout.decode('utf-8')} \n{run_completed.stderr.decode('utf-8')}"
-    click.echo(txt)
-    return txt
+        txt= f"Error running: {command} \n"
+        click.echo(txt)
+        return txt
 
 @click.group()
 def cli():
@@ -168,13 +168,19 @@ def down(envfile,extra_docker_args):
     extra = " ".join(extra_docker_args)
     run_command(f"docker-compose --env-file {envfile} down {extra}")
 
+def safe_copy_front_end_env():
+    # copy the .envfrontend to the frontend directory (necessary at build time)
+    try: 
+        shutil.copyfile(f".envfrontend", "./agentkit/frontend/.env")
+    except Exception as e:
+        click.echo("Error managing the .envfrontend file because %s." % e)
+        click.echo("Continuing anyway...")
 @cli.command()
 @click.option('--envfile', default='.envbackend', help='The env file to use')
 @click.argument('extra_docker_args', nargs=-1)
 def up(envfile,extra_docker_args):
     """Start the environment."""
-    # copy the .envfrontend to the frontend directory (necessary at build time)
-    shutil.copyfile(f".envfrontend", "./agentkit/frontend/.env")
+    safe_copy_front_end_env()
     extra = " ".join(extra_docker_args)
     run_command(f"docker-compose --env-file {envfile} up -d {extra}")
 
@@ -185,7 +191,7 @@ def build(envfile):
     run_command(f"docker-compose --env-file {envfile} build fastapi_server")
 
     # copy the .envfrontend to the frontend directory (necessary at build time )
-    shutil.copyfile(f".envfrontend", "./agentkit/frontend/.env")
+    safe_copy_front_end_env()
     run_command(f"docker-compose --env-file {envfile} build nextjs_server")
 
 
@@ -221,7 +227,7 @@ def help():
 @cli.command()
 def version():
     """Show the version of the agentkitcli."""
-    click.echo("0.1.4")
+    click.echo("0.1.5")
 
 def main():
     cli()
