@@ -59,9 +59,11 @@ def run_command(command):
     # run process 
     run_completed = subprocess.run(command, shell=True, capture_output=True)
     if run_completed.returncode == 0:    
-        return run_completed.stdout.decode('utf-8')
+        txt= run_completed.stdout.decode('utf-8')
     else:
-        return f"Error running: {command} \n{run_completed.stdout.decode('utf-8')} \n{run_completed.stderr.decode('utf-8')}"
+        txt= f"Error running: {command} \n{run_completed.stdout.decode('utf-8')} \n{run_completed.stderr.decode('utf-8')}"
+    click.echo(txt)
+    return txt
 
 @click.group()
 def cli():
@@ -193,8 +195,8 @@ def build(envfile):
 def ps(envfile, extra_docker_args):
     """Show the running containers."""
     extra = " ".join(extra_docker_args)
-    r = run_command(f"docker-compose --env-file {envfile} ps {extra}")
-    click.echo(r)
+    run_command(f"docker-compose --env-file {envfile} ps {extra}")
+    
 
 
 @cli.command()
@@ -202,8 +204,7 @@ def ps(envfile, extra_docker_args):
 @click.argument('container', nargs=1)
 def restart(envfile, container):
     """Show the running containers."""
-    r = run_command(f"docker-compose --env-file {envfile} restart {container}")
-    click.echo(r)
+    run_command(f"docker-compose --env-file {envfile} restart {container}")
 
 @cli.command()
 @click.option('--envfile', default='.envbackend', help='The env file to use')
@@ -213,9 +214,14 @@ def ingest(envfile):
     run_command(f"docker-compose --env-file {envfile} exec fastapi_server python app/document_ingestion.py")
 
 @cli.command()
-def help(envfile):
+def help():
     echo_links()
     echo_suggested_commands()
+
+@cli.command()
+def version():
+    """Show the version of the agentkitcli."""
+    click.echo("0.1.4")
 
 def main():
     cli()

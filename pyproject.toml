@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "agentkitcli"
-version = "0.1.3"
+version = "0.1.4"
 description = ""
 authors = ["Gatto-Francois <Gatto.Francois@bcg.com>"]
 readme = "README.md"
